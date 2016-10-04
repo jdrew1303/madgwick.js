@@ -1,19 +1,13 @@
 // scene.js
 
-"use strict";
+'use strict';
 
 /*global THREE: true,
-         window: true,
-         document: true,
-         requestAnimationFrame: true,
-         scene: true,
-         chrome: true,
-         ArrayBuffer: true,
-         Uint8Array: true
+         Madgwick: true
 */
-
+var imuData = {a: [0, 0, 0], g: [0, 0, 0], m: [0, 0, 0], b: 0};
+// var isConnected = false;
 var keyQ1 = new THREE.Quaternion();
-
 
 
 var axisX = new THREE.Vector3(1, 0, 0);
@@ -23,7 +17,7 @@ var axisZ = new THREE.Vector3(0, 0, 1);
 var objects = [];
 
 
-// 
+//
 function rotateOnAxis(object, axis, angle) {
     keyQ1.setFromAxisAngle(axis, angle);
     //object.quaternion.multiply(keyQ1);
@@ -63,13 +57,13 @@ function showAxes() {
         yPointer,
         zPointer;
 
-    // The color coding is X-Y-Z => red-green-blue. 
-    // X axis pointer 
+    // The color coding is X-Y-Z => red-green-blue.
+    // X axis pointer
     xPointer = dumbbell(0.1, 0.04, 0xff0000);
     rotateOnAxis(xPointer, axisZ, Math.PI / 2);
     scene.add(xPointer);
 
-    // Y axis pointer 
+    // Y axis pointer
     yPointer = dumbbell(0.1, 0.04, 0x00ff00, axisX, 0);
     rotateOnAxis(yPointer, axisY, Math.PI / 2);
     scene.add(yPointer);
@@ -81,13 +75,13 @@ function showAxes() {
 }
 
 // Create a renderer using an existing canvas
-var canvas = document.getElementById("canvas");
+var canvas = document.getElementById('canvas');
 var renderer = new THREE.WebGLRenderer({ canvas: canvas });
 var CANVAS_WIDTH = canvas.scrollWidth;
 var CANVAS_HEIGHT = canvas.scrollHeight;
 var CANVAS_ASPECT = CANVAS_WIDTH / CANVAS_HEIGHT;
-console.log("WIDTH", CANVAS_WIDTH);
-console.log("HEIGHT", CANVAS_HEIGHT);
+console.log('WIDTH', CANVAS_WIDTH);
+console.log('HEIGHT', CANVAS_HEIGHT);
 renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
 
 // Create a scene.
@@ -157,7 +151,7 @@ objects.push(cube);
 
 
 var geometry = new THREE.TorusGeometry(1, 0.02, 16, 100);
-var material = new THREE.MeshPhongMaterial({color: 0x0000ff,
+material = new THREE.MeshPhongMaterial({color: 0x0000ff,
                                         specular: 0xa0a0a0,
                                         shininess: 4,
                                         vertexColors: THREE.FaceColors,
@@ -167,7 +161,7 @@ var torus = new THREE.Mesh(geometry, material);
 scene.add(torus);
 
 geometry = new THREE.TorusGeometry(1, 0.02, 16, 100);
-var material = new THREE.MeshPhongMaterial({color: 0x00ff00,
+material = new THREE.MeshPhongMaterial({color: 0x00ff00,
                                         specular: 0xa0a0a0,
                                         shininess: 4,
                                         vertexColors: THREE.FaceColors,
@@ -178,7 +172,7 @@ rotateOnAxis(torus, axisX, Math.PI / 2);
 scene.add(torus);
 
 geometry = new THREE.TorusGeometry(1, 0.02, 16, 100);
-var material = new THREE.MeshPhongMaterial({color: 0xff0000,
+material = new THREE.MeshPhongMaterial({color: 0xff0000,
                                         specular: 0xa0a0a0,
                                         shininess: 4,
                                         vertexColors: THREE.FaceColors,
@@ -188,17 +182,12 @@ torus = new THREE.Mesh(geometry, material);
 rotateOnAxis(torus, axisY, Math.PI / 2);
 scene.add(torus);
 
-
-
-
-
-
 // Render function.
 var render = function () {
     requestAnimationFrame(render);
 
-    //rotateOnAxis(cube, axisX, 0.01); 
-    //rotateOnAxis(cube, axisY, 0.01); 
+    //rotateOnAxis(cube, axisX, 0.01);
+    //rotateOnAxis(cube, axisY, 0.01);
 
     renderer.render(scene, camera);
 };
@@ -209,8 +198,8 @@ function onWindowResize() {
     var layer1 = document.getElementById('layer1');
     CANVAS_WIDTH = layer1.offsetWidth;
     CANVAS_HEIGHT = layer1.offsetHeight;
-    console.log("WIDTH", CANVAS_WIDTH);
-    console.log("HEIGHT", CANVAS_HEIGHT);
+    console.log('WIDTH', CANVAS_WIDTH);
+    console.log('HEIGHT', CANVAS_HEIGHT);
     camera.aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
     camera.updateProjectionMatrix();
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -223,10 +212,10 @@ function onKeyDown(event) {
         break;
     case 68: // d
         break;
-    case 38: // Up 
+    case 38: // Up
         rotateOnAxis(cube, axisY, +0.9);
         break;
-    case 40: // Down 
+    case 40: // Down
         rotateOnAxis(cube, axisY, -0.9);
         break;
     case 37: // Left
@@ -235,6 +224,7 @@ function onKeyDown(event) {
     case 39: // Right
         rotateOnAxis(cube, axisZ, -0.9);
         break;
+    default:
     }
 }
 
@@ -243,108 +233,112 @@ window.addEventListener('resize', onWindowResize, false);
 document.addEventListener('keydown', onKeyDown, false);
 
 
-
-function random(low, high) {
-    return Math.random() * (high - low) + low;
-}
+// var noiseLevel = 0.01;
+// var noiseLevel = 0.5;
+// function random(low, high) {
+//     return Math.random() * (high - low) + low;
+// }
 
 // Test
-console.log(q0, q1, q2, q3);
+// console.log(q0, q1, q2, q3);
 
-var gx = 0.5;
-var gy = 0.0;
-var gz = 0.0;
-var ax = 1.0;
-var ay = 1.0;
-var az = 1.0;
-var mx = 0.0;
-var my = 0.0;
-var mz = 0.0;
+// var sampleFreq = 50;
+var samplePeriodMillis = 20;
+// var step = 0;
+// var frequencyRoll = 3;
+// var frequencyPitch = 3;
+// var frequencyYaw = 0.1;
+//
+// var doYaw = false;
+// var doRoll = false;
+// var doPitch = false;
 
-var samplePeriodMillis = 1000 / sampleFreq;
-var step = 0;
-var frequencyRoll = 3;
-var frequencyPitch = 3;
-var frequencyYaw = 0.1;
-
-var doYaw   = false;
-var doRoll  = false;
-var doPitch = false;
-
-var noiseLevel = 0.01;
-
+var madgwick = new Madgwick(samplePeriodMillis);
+// var initDone = false;
 
 function doTest() {
 
-    // Gyro input
-    gx =   0.0;      // Not in use
-    gy =   0.0;
-    gz =   0.0;
+    // var gx = 0.5;
+    // var gy = 0.0;
+    // var gz = 0.0;
+    // var ax = 1.0;
+    // var ay = 1.0;
+    // var az = 1.0;
+    // var mx = 0.0;
+    // var my = 0.0;
+    // var mz = 0.0;
 
-    // Accelerometer input
-    if (doRoll) {
-        ax = 0.1 * Math.cos(frequencyRoll  * (2 * Math.PI) * step / sampleFreq);  // Roll oscillations
-    } else {
-        ax = 0.0;
-    }
-    if (doPitch) {
-        ay = 0.1 * Math.sin(frequencyPitch * (2 * Math.PI) * step / sampleFreq);  // Pitch oscillations
-    } else {
-        ay = 0.0;
-    }
-    az = -1.0;                                    // Gravity constant
+    // // Gyro input
+    // gx = 0.0;      // Not in use
+    // gy = 0.0;
+    // gz = 0.0;
+    //
+    // // Accelerometer input
+    // if (doRoll) {
+    //     ax = 0.1 * Math.cos(frequencyRoll * (2 * Math.PI) * step / sampleFreq);  // Roll oscillations
+    // } else {
+    //     ax = 0.0;
+    // }
+    // if (doPitch) {
+    //     ay = 0.1 * Math.sin(frequencyPitch * (2 * Math.PI) * step / sampleFreq);  // Pitch oscillations
+    // } else {
+    //     ay = 0.0;
+    // }
+    // az = -1.0;                                    // Gravity constant
+    //
+    // if (doYaw) {
+    //     // Magnetometer input
+    //     mx = Math.cos(frequencyYaw * (2 * Math.PI) * step / sampleFreq);       // Yaw, rotate around the verticle axis (z)
+    //     my = Math.sin(frequencyYaw * (2 * Math.PI) * step / sampleFreq);
+    //     mz = 0.0;
+    // } else {
+    //     mx = 0.0;
+    //     my = 0.0;
+    //     mz = 0.0;
+    // }
 
-    if (doYaw) {
-        // Magnetometer input
-        mx =  Math.cos(frequencyYaw * (2 * Math.PI) * step / sampleFreq);       // Yaw, rotate around the verticle axis (z)
-        my =  Math.sin(frequencyYaw * (2 * Math.PI) * step / sampleFreq);
-        mz =  0.0;
-    } else {
-        mx = 0.0;
-        my = 0.0;
-        mz = 0.0;
-    }
-    
-    // Move the light around with the magnetometer vector. 
-    dirLight.position.set(Math.sin(frequencyYaw * (2 * Math.PI) * step / sampleFreq),
-                          Math.cos(frequencyYaw * (2 * Math.PI) * step / sampleFreq),
-                          0.5);
-/*
+    // Move the light around with the magnetometer vector.
+//    dirLight.position.set(Math.sin(frequencyYaw * (2 * Math.PI) * step / sampleFreq),
+//                          Math.cos(frequencyYaw * (2 * Math.PI) * step / sampleFreq),
+//                         0.5);
+
     // Put some noise on the gyro
-    var noise = function () { return random(-noiseLevel,  +noiseLevel); };
-    gx += noise();
-    gy += noise();
-    gz += noise();
-    ax += noise();
-    ay += noise();
-    az += noise();
-    mx += noise();
-    my += noise();
-    mz += noise();
-*/
+    // var noise = function () { return random(-noiseLevel, +noiseLevel); };
+    // gx += noise();
+    // gy += noise();
+    // gz += noise();
+    // ax += noise();
+    // ay += noise();
+    // az += noise();
+    // mx += noise();
+    // my += noise();
+    // mz += noise();
 
-    ax = imuData.a[0];
-    ay = imuData.a[1];
-    az = imuData.a[2];
-    gx = imuData.g[0];
-    gy = imuData.g[1];
-    gz = imuData.g[2];
-//    mx = imuData.m[0];
-//    my = imuData.m[1];
-//    mz = imuData.m[2];
-    madgwickAHRSupdate(gx, gy, gz, ax, ay, az, mx, my, mz);
+    // if (!initDone && isConnected) {
+    //     initDone = true;
+    //     madgwick.initialise(imuData.a[0], imuData.a[1], imuData.a[2], imuData.m[0], imuData.m[1]);
+    // } else {
+        madgwick.update(imuData.g[0], imuData.g[1], imuData.g[2],
+                        imuData.a[0], imuData.a[1], imuData.a[2],
+                        imuData.m[0], imuData.m[1], imuData.m[2],
+                        imuData.dt);
+    // }
 
+    // var v = madgwick.toVector();
+    // var angle = v.angle;
+    // var nx = v.x;
+    // var ny = v.y;
+    // var nz = v.z;
+    // console.log(Math.round(angle * 1000) / 1000, Math.round(nx * 1000) / 1000, Math.round(ny * 1000) / 1000, Math.round(nz * 1000) / 1000);
 
-//    mahonyAHRSupdate(gx, gy, gz, ax, ay, az, mx, my, mz);
-    // Note: Seems to me Madgwick has put the quaternian axis vector in q1, q2, q3 and the angle in q0
-    //       
-    cube.quaternion.set(q1, q2, q3, q0);
+    var q = madgwick.getQuaternion();
+    cube.quaternion.set(q.x, q.y, q.z, q.w);
 
-    if ((q0 === NaN) || (q1 === NaN) || (q2 === NaN) || (q3 === NaN)) {
-        console.log ("Exploded!");
+    if (isNaN(q.x) || isNaN(q.y) || isNaN(q.z) || isNaN(q.w)) {
+        console.log('Exploded!');
     }
 
-    step += 1;
+    // step += 1;
 }
 
 // Find intersections
@@ -373,8 +367,8 @@ document.addEventListener('mousedown', function (event) {
     if (intersects.length > 0) {
         //info.innerHTML = 'INTERSECT Count: ' + ++count;
         console.log('INTERSECT Count: ' + count++);
-        doYaw = !doYaw;
-        console.log(doYaw);
+        // doYaw = !doYaw;
+        // console.log(doYaw);
 
         var el = document.getElementById('divstack');
         el.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
@@ -383,7 +377,6 @@ document.addEventListener('mousedown', function (event) {
         el.requestFullscreen(); // standard
     }
 }, false);
-
 
 
 setInterval(function () {

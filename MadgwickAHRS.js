@@ -12,20 +12,20 @@
 //
 //=====================================================================================================
 
-"use strict";
+'use strict';
 
 //---------------------------------------------------------------------------------------------------
 // Definitions
-
-var sampleFreq = 100.0;  // sample frequency in Hz
-var betaDef    =  1;   // 2 * proportional gain
+var sampleInterval = 20; // interval in ms
+var sampleFreq = 1000 / sampleInterval;  // sample frequency in Hz
+var betaDef = 0.25;   // 2 * proportional gain
 
 //---------------------------------------------------------------------------------------------------
 // Variable definitions
 
 var beta = betaDef;                         // 2 * proportional gain (Kp)
 var q0 = 1.0, q1 = 0.0, q2 = 0.0, q3 = 0.0; // quaternion of sensor frame relative to auxiliary frame
-console.log("Madgwick here");
+console.log('Madgwick here');
 
 
 //====================================================================================================
@@ -128,7 +128,7 @@ function madgwickAHRSupdate(gx, gy, gz, ax, ay, az, mx, my, mz) {
     if (!((ax === 0.0) && (ay === 0.0) && (az === 0.0))) {
 
         // Normalise accelerometer measurement
-        recipNorm = Math.pow(ax * ax + ay * ay + az * az,  -0.5);
+        recipNorm = Math.pow(ax * ax + ay * ay + az * az, -0.5);
         ax *= recipNorm;
         ay *= recipNorm;
         az *= recipNorm;
@@ -204,16 +204,3 @@ function madgwickAHRSupdate(gx, gy, gz, ax, ay, az, mx, my, mz) {
 //====================================================================================================
 // END OF CODE
 //====================================================================================================
-
-
-
-
-
-
-
-
-
-
-
-
-

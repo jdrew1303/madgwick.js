@@ -11,16 +11,17 @@
 //
 //=====================================================================================================
 
-"use strict";
+'use strict';
 
 //---------------------------------------------------------------------------------------------------
 // Definitions
 
-var sampleFreq = 100.0;             // sample frequency in Hz
+var sampleInterval = 20; // interval in ms
+var sampleFreq = 1000 / sampleInterval;  // sample frequency in Hz
 //var twoKpDef   = 2.0 * 0.5;         // 2 * proportional gain
 //var twoKiDef   = 2.0 * 0.0;         // 2 * integral gain
-var twoKpDef   = 100.0 * 0.5;         // 2 * proportional gain
-var twoKiDef   = 10.0 * 0.0;         // 2 * integral gain
+var twoKpDef = 10.0 * 0.5;         // 2 * proportional gain
+var twoKiDef = 10.0 * 0.0;         // 2 * integral gain
 
 //---------------------------------------------------------------------------------------------------
 // Variable definitions
@@ -37,7 +38,7 @@ var integralFBx = 0.0, integralFBy = 0.0, integralFBz = 0.0;                // i
 // IMU algorithm update
 //
 
-function mahonyAHRSupdateIMU(gx,  gy,  gz,  ax,  ay,  az) {
+function mahonyAHRSupdateIMU(gx, gy, gz, ax, ay, az) {
     var recipNorm;
     var halfvx, halfvy, halfvz;
     var halfex, halfey, halfez;
@@ -105,9 +106,10 @@ function mahonyAHRSupdateIMU(gx,  gy,  gz,  ax,  ay,  az) {
 // AHRS algorithm update
 //
 
-function mahonyAHRSupdate(gx,  gy,  gz,  ax,  ay,  az,  mx,  my,  mz) {
+function mahonyAHRSupdate(gx, gy, gz, ax, ay, az, mx, my, mz) {
+
     var recipNorm;
-    var q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;  
+    var q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
     var hx, hy, bx, bz;
     var halfvx, halfvy, halfvz, halfwx, halfwy, halfwz;
     var halfex, halfey, halfez;

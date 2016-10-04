@@ -1,129 +1,104 @@
-
-
-/*global THREE: true,
-         window: true,
-         document: true,
-         requestAnimationFrame: true,
-         scene: true,
-         chrome: true,
-         ArrayBuffer: true,
-         Uint8Array: true,
-         Int8Array: true
+'use strict';
+/*global imuData: true
 */
 
-"use strict";
+var Device = require('Device');
+var controller = new Device({ deviceType: 'controller', proxyUrl: '10.1.1.3', channel: 'Honestly Round Down Quark' }, require('WebClientConnection'));
+var lasttime;
+controller.connection.socket.on('connect', function() {
+    controller.on('register', function() {
+        console.log('<p>Registered on channel: ' + controller.channel + ' with UID: ' + controller.uid + '</p>');
+        controller.ping(function(t) {
+            console.log('pinged: ', t);
+        });
+        controller.on('status', function(status) {
 
-var connectionId;
+            if (typeof status === 'object' && typeof status.compassRaw === 'object') {
+                // mesh.rotation.x = status.compassRaw.x/180;
+                // mesh.rotation.y = status.compassRaw.y/180;
+                // if (status.accel.x === 'na') status.accel.x = 0;
+                // if (status.accel.y === 'na') status.accel.y = 0;
+                // if (status.accel.z === 'na') status.accel.z = 0;
+                // status.accel.x = unshake(status.accel, 'x');
+                // status.accel.y = unshake(status.accel, 'y');
+                // status.accel.z = unshake(status.accel, 'z');
 
-// Convert string to ArrayBuffer
-var convertStringToArrayBuffer = function (str) {
-    var i,
-        buf = new ArrayBuffer(str.length),
-        bufView = new Uint8Array(buf);
+                // console.log(JSON.stringify(status));
 
-    for (i = 0; i < str.length; i += 1) {
-        bufView[i] = str.charCodeAt(i);
-    }
-    return buf;
-};
+                // Rotate the compass vector by the declination
+                // var declinationRadians = 19.62 * Math.PI / 180;
+                // console.log('BEFORE:', calcHeading(status.compassRaw.x, status.compassRaw.z, 0) * 180 / Math.PI, JSON.stringify(status.compassRaw))
+                // var sinDecl = Math.sin(declinationRadians);
+                // var cosDecl = Math.cos(declinationRadians);
+                // var x = status.compassRaw.x;
+                // var y = status.compassRaw.y;
+                // status.compassRaw.x = x * cosDecl - y * sinDecl;
+                // status.compassRaw.y = x * sinDecl - y * cosDecl;
+                //
+                // console.log('AFTER 1:', calcHeading(status.compassRaw.x, status.compassRaw.z, 0) * 180 / Math.PI, JSON.stringify(status.compassRaw))
+                //
+                // // Rotate the compass vector by the inclination
+                // var inclinationRadians = 62.68 * Math.PI / 180;
+                // var sinIncl = Math.sin(inclinationRadians);
+                // var cosIncl = Math.cos(inclinationRadians);
+                // x = status.compassRaw.x;
+                // var z = status.compassRaw.z;
+                // status.compassRaw.x = x * cosIncl + z * sinIncl;
+                // status.compassRaw.z = -x * sinIncl + z * cosIncl;
+                //
+                // console.log('AFTER 2:', calcHeading(status.compassRaw.x, status.compassRaw.z, 0) * 180 / Math.PI, JSON.stringify(status.compassRaw))
 
+                imuData = {
+                    a: [status.accel.x, status.accel.y, status.accel.z],
+                    g: [status.gyro.x * Math.PI / 180, status.gyro.y * Math.PI / 180, status.gyro.z * Math.PI / 180],
+                    m: [status.compassRaw.x, status.compassRaw.y, status.compassRaw.z],
+                    b: 0,
+                    dt: lasttime ? ((status.time - lasttime) / 1000) : null
+                };
+                console.log(imuData.a[0], imuData.a[1], imuData.a[2]);
+                lasttime = status.time;
 
-var imuData = {a: [0, 0, 0], g: [0, 0, 0], m: [0, 0, 0], b: 0};
-
-var myString = "";
-function ascii2strings(buffer) {
-    var lineStart = 0,
-        lineEnd = 0,
-        i,
-        j,
-        inBytes = new Int8Array(buffer);
-
-    // Scan all input bytes looking for a line ending
-    for (i = 0; i < inBytes.length; i += 1) {
-        // Do we have a line ending here?
-        if ((inBytes[i] === 0x0d) || (inBytes[i] === 0x0a)) {
-            lineEnd = i;
-
-            // Convert bytes of the line to a string
-            for (j = lineStart; j < lineEnd; j += 1) {
-                myString += String.fromCharCode(inBytes[j]);
             }
-            // Emit the line as a  string
-            try {
-                imuData = JSON.parse(myString);
-            } catch (ignore) {
-            }
-            myString = "";
-            lineStart = lineEnd + 1;
-        }
-    }
-    // Are there any trailing bytes?
-    if (lineStart !== inBytes.length) {
-        // Convert trailing bytes string, a part line ready for next call.
-        for (i = lineEnd + 1; i < inBytes.length; i += 1) {
-            myString += String.fromCharCode(inBytes[i]);
-        }
-    }
-}
 
-var onReceiveCallback = function (info) {
-    if (info.connectionId === connectionId && info.data) {
-        ascii2strings(info.data);
-    }
-};
+            // console.log('Controller: Toy said: ', status);
+        });
+        controller.on('error', function(err) {
+            console.log('There was an error: ', err);
+        });
 
-chrome.serial.onReceive.addListener(onReceiveCallback);
+    });
+});
 
-var onDisconnect = function (result) {
-    if (result) {
-        console.log("Disconnected from the serial port");
-    } else {
-        console.log("Disconnect failed");
-    }
-};
+// function calcHeading(axis1, axis2, declination) {
+//
+//     var twoPies = 2 * Math.PI;
+//     var heading = Math.atan2(axis2, axis1);
+//     heading += declination;
+//
+//     if (heading < 0) {
+//         heading += twoPies;
+//     }
+//     if (heading > twoPies) {
+//         heading -= twoPies;
+//     }
+//
+//     return heading;
+// }
+//
+// function unshake(accel, axis) {
+//     if (accel[axis] === 'shaken') {
+//         if (lastVals[axis] < 0) {
+//             return -100;
+//         } else {
+//             return 100;
+//         }
+//     }
+//     lastVals[axis] = accel[axis];
+//     return accel[axis];
+// }
 
-var writeSerial;
-
-var onSend = function (sendInfo) {
-    console.log("Serial data sent!");
-    if (sendInfo.error) {
-        console.log("Serial port send failed");
-    } else {
-        //console.log("Sent bytes = ", sendInfo.bytesSent);
-        writeSerial("All work and no play make Jack a dull boy");
-        //chrome.serial.disconnect(connectionId, onDisconnect);
-    }
-};
-
-var writeSerial = function (str) {
-    chrome.serial.send(connectionId, convertStringToArrayBuffer(str), onSend);
-};
-
-
-var onGetDevices = function (ports) {
-    var port;
-    if (ports.length > 0) {
-        for (port = 0; port < ports.length; port += 1) {
-            console.log(ports[port].path);
-        }
-    } else {
-        console.log("No serial ports found");
-    }
-};
-
-chrome.serial.getDevices(onGetDevices);
-
-var onConnect = function (connectionInfo) {
-    // The serial port has been opened. Save its id to use later.
-    console.log("Connected to: ", connectionInfo);
-
-
-    connectionId = connectionInfo.connectionId;
-    // Do whatever you need to do with the opened port.
-
-    //writeSerial("Hello world!");
-
-};
-
-// Connect to the serial port 
-chrome.serial.connect("/dev/ttyACM0", {bitrate: 115200}, onConnect);
+// var lastVals = {
+//     x: 0,
+//     y: 0,
+//     z: 0
+// };
